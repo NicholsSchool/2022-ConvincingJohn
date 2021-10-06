@@ -130,9 +130,9 @@ public class ApteryxMap
      * 
      * @return the robot's current Heading
      */
-    public float getHeading() {
+    public double getHeading() {
         
-        return imu.getAngularOrientation().firstAngle;
+        return (double) imu.getAngularOrientation().firstAngle;
     }
 
     
@@ -178,18 +178,23 @@ public class ApteryxMap
      * @param deltaHeading how far, in degrees, the robot has spun on the elevated-floor-like 
      *  axis. The change in Heading. Is updated with every loop
      */
-    public void sauce( double speed, double spinSpeed, double angle, float deltaHeading ) {
+    public void sauce( double speed, double spinSpeed, double angle, double deltaHeading ) {
         
         if( anchorless ) {
             frontMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 0 - deltaHeading ) ) ) ) );
             rightMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 120 - deltaHeading ) ) ) ) );
             leftMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 240 - deltaHeading ) ) ) ) );
+            break;
         } 
-        else {
-            frontMotor.setPower( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 0 - deltaHeading ) ) ) );
-            rightMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 120 - deltaHeading ) ) ) ) );
-            leftMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 240 - deltaHeading ) ) ) ) );
-        } 
+        frontMotor.setPower( speed * Math.cos( Math.toRadians( angle + ( 0 - deltaHeading ) ) ) );
+        rightMotor.setPower( spinSpeed + ( speed * Math.cos( Math.toRadians( angle + ( 120 - deltaHeading ) ) ) ) );
+        leftMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.toRadians( angle + ( 240 - deltaHeading ) ) ) ) );
+    }
+
+    public void sauce2( double r, double theta, double deltaHeading) {
+        frontMotor.setPower( ( 1 - r ) + ( r * Math.cos( Math.toRadians( theta + ( 0 - deltaHeading ) ) ) ) );
+        rightMotor.setPower( ( 1 - r ) + ( r * Math.cos( Math.toRadians( theta + ( 120 - deltaHeading ) ) ) ) );
+        leftMotor.setPower( ( 1 - r ) + ( r * Math.cos( Math.toRadians( theta + ( 240 - deltaHeading ) ) ) ) );
     }
     
     

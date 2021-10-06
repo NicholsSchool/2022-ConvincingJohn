@@ -85,85 +85,19 @@ public class ApteryxTele extends OpMode {
     @Override
     public void loop() {
         
-        
-        /*
-         *   SPEED
-         */
-        
-        // Calculating speed, r, magnitude of vector... r = hypot( x, y ) = sqrt( x^2 + y^2 ) ...
-        speed = Math.hypot( gamepad1.left_stick_x, gamepad1.left_stick_y );
-        
-        // Displaying speed...
-        telemetry.addData( "speed", "%1.2f", speed );
-        
-        
-        /*
-         *   SPIN SPEED
-         */
-        
-        // Calculating spinSpeed...
-        spinSpeed = -gamepad1.right_trigger - -gamepad1.left_trigger;
-        
-        // Displaying spinSpeed...
-        telemetry.addData( "spinSpeed", "%1.2f", spinSpeed );
-        
-        
-        /* 
-         *   ANGLE
-         */
-        
-        // Calculating angle, Theta, direction of vector... Theta = angle = arctan( y / x ) ...
-        angle = Math.toDegrees( Math.atan2( gamepad1.left_stick_y, gamepad1.left_stick_x ) );
-        
-        // Displaying angle...
-        telemetry.addData( "angle", "%3.2f", angle );
-        
-        
-        /*
-         *   ROBOT
-         */
-         
-        telemetry.addData( "Pattern", pattern );
-         
-        // Blinkin Patterning
-        if( gamepad1.a )
-            robot.blinkin.setPattern( RevBlinkinLedDriver.BlinkinPattern.fromNumber( 1 + new java.util.Random().nextInt( 100 ) ) );
-        if( gamepad1.dpad_down )
-            robot.blinkin.setPattern( RevBlinkinLedDriver.BlinkinPattern.BLACK );
+        double r = Math.hypot( gamepad1.left_stick_x, gamepad1.left_stick_y );
+        double spin = -gamepad1.right_trigger - -gamepad1.left_trigger;
+        double theta = Math.toDegrees( Math.atan2( gamepad, x) );
 
-        
-        // Movement. Moving, Spinning, and Saucing.
-        if( speed != 0 && spinSpeed != 0 )
-            robot.sauce( speed, spinSpeed, angle, robot.getHeading() - lastHeading );
+        if( r != 0 && spin != 0 )
+            robot.sauce2( r, theta, robot.getHeading() - lastHeading );
         else {
             lastHeading = robot.getHeading();
-            if( speed != 0 )
-                robot.move(speed, angle);
-            if( spinSpeed != 0 )
-                robot.spin( spinSpeed );
+            if( r != 0 )
+                robot.move( r, spin );
+            if( spin != 0 )
+                robot.spin( spin );
         }
-        
-        
-        // Front-shifting and s'more Blinkin Patterning
-        if( gamepad1.x ) {
-            robot.setFront( 'x' );
-            robot.blinkin.setPattern( RevBlinkinLedDriver.BlinkinPattern.BLUE);
-        }
-        if( gamepad1.y ) {
-            robot.setFront( 'y' );
-            robot.blinkin.setPattern( RevBlinkinLedDriver.BlinkinPattern.YELLOW);
-        }
-        if( gamepad1.b ) {
-            robot.setFront( 'b' );
-            robot.blinkin.setPattern( RevBlinkinLedDriver.BlinkinPattern.RED);
-        }
-        
-        
-        // Robot 'Anchoring'
-        if( gamepad1.left_stick_button )
-            robot.anchorless = !robot.anchorless;
-        
-        telemetry.addData( "ANCHORED", !robot.anchorless );
     }
 
     @Override
