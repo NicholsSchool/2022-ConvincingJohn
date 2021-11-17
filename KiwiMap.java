@@ -52,20 +52,21 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * This hardware class assumes the following device names have been configured on the robot:
  * Note:  All names are lower case and some have single spaces between words.
  */
-public class ApteryxMap
+public class KiwiMap
 {
     /* Public OpMode members. */
     public BNO055IMU imu;
-    public RevBlinkinLedDriver blinkin;
     
     public DcMotor frontMotor, rightMotor, leftMotor;
+    public DcMotorSimple duck, turntable, intake;
+    public RevBlinkinLedDriver blinkin;
     
-    public boolean anchorless = false;
+    public boolean robotCentric = true;
 
     /* local OpMode members. */
     HardwareMap hwMap;
 
-    public ApteryxMap() {}
+    public KiwiMap() {}
 
     public void init( HardwareMap ahwMap ) {
         
@@ -84,14 +85,6 @@ public class ApteryxMap
         // Defining and Initializing IMU... Initializing it with the above Parameters...
         imu = hwMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
-        
-        
-        /*
-         *  BLINKIN
-         */
-
-        // Defining and Initializing Blinkin...
-        blinkin = hwMap.get( RevBlinkinLedDriver.class, "Blinkin" );
 
         
         /*
@@ -117,6 +110,29 @@ public class ApteryxMap
         frontMotor.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
         rightMotor.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
         leftMotor.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
+
+
+        /*
+         *  SERVOS
+         */
+
+        // Defining and Initializing the Servos...
+        duck = hwMap.get( DcMotorSimple.class, "Duck" );
+        turntable = hwMap.get( DcMotorSimple.class, "Turntable" );
+        intake = hwMap.get( DcMotorSimple.class, "Intake" );
+
+        // Setting the Directions of the Servos...
+        duck.setDirection( DcMotorSimple.Direction.FORWARD );
+        turntable.setDirection( DcMotorSimple.Direction.FORWARD );
+        intake.setDirection( DcMotorSimple.Direction.FORWARD );
+
+        
+        /*
+         *  BLINKIN
+         */
+
+        // Defining and Initializing Blinkin...
+        blinkin = hwMap.get( RevBlinkinLedDriver.class, "Blinkin" );
     }
     
     
@@ -145,9 +161,9 @@ public class ApteryxMap
      */
     public void move( double speed, double angle ) {
         
-        frontMotor.setPower( speed * Math.cos( ( Math.PI / 180 ) * ( angle ) ) );
-        rightMotor.setPower( speed * Math.cos( ( Math.PI / 180 ) * ( angle + 120 ) ) );
-        leftMotor.setPower( speed * Math.cos( ( Math.PI / 180 ) * ( angle + 240 ) ) );
+        frontMotor.setPower( speed * Math.cos( Math.toRadians( angle ) ) );
+        rightMotor.setPower( speed * Math.cos( Math.toRadians( angle + 120 ) ) );
+        leftMotor.setPower( speed * Math.cos( Math.toRadians( angle + 240 ) ) );
     }
     
     /**
@@ -157,12 +173,14 @@ public class ApteryxMap
      */
     public void spin( double speed ) {
         
-        if( anchorless ) {
+        if( robotCentric ) 
+        {
             frontMotor.setPower( speed );
             rightMotor.setPower( speed );
             leftMotor.setPower( speed );
         }
-        else {
+        else 
+        {
             rightMotor.setPower( speed );
             leftMotor.setPower( speed );
         }
@@ -180,15 +198,18 @@ public class ApteryxMap
      */
     public void sauce( double speed, double spinSpeed, double angle, double deltaHeading ) {
         
-        if( anchorless ) {
+        if( robotCentric ) 
+        {
             frontMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 0 - deltaHeading ) ) ) ) );
             rightMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 120 - deltaHeading ) ) ) ) );
             leftMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.PI / 180 ) * ( angle + ( 240 - deltaHeading ) ) ) ) );
-            break;
         } 
+        else 
+        {        
         frontMotor.setPower( speed * Math.cos( Math.toRadians( angle + ( 0 - deltaHeading ) ) ) );
         rightMotor.setPower( spinSpeed + ( speed * Math.cos( Math.toRadians( angle + ( 120 - deltaHeading ) ) ) ) );
-        leftMotor.setPower( spinSpeed + ( speed * Math.cos( ( Math.toRadians( angle + ( 240 - deltaHeading ) ) ) ) );
+        leftMotor.setPower( spinSpeed + ( speed * Math.cos( Math.toRadians( angle + ( 240 - deltaHeading ) ) ) ) );
+        }
     }
 
     public void sauce2( double r, double theta, double deltaHeading) {
@@ -203,40 +224,18 @@ public class ApteryxMap
      */
     
     /**
-     * Sets the 'front' of the robot to one of 3 'fronts.' Each 'front' is the same 
-     *  color as a button on the gamepad, and, depending on what button is pressed,
-     *  the respective 'front' is set to be the 'front.'
-     * 
-     * @param button the button pressed
-     */
-    public void setFront( char button ) {
-        
-        switch( button ) {
-            
-            case 'x':
-                frontMotor = hwMap.get( DcMotor.class, "Motor3" );
-                rightMotor = hwMap.get( DcMotor.class, "Motor1" );
-                leftMotor = hwMap.get( DcMotor.class, "Motor2" );
-                break;
-            case 'y':
-                frontMotor = hwMap.get( DcMotor.class, "Motor1" );
-                rightMotor = hwMap.get( DcMotor.class, "Motor2" );
-                leftMotor = hwMap.get( DcMotor.class, "Motor3" );
-                break;
-            case 'b':
-                frontMotor = hwMap.get( DcMotor.class, "Motor2" );
-                rightMotor = hwMap.get( DcMotor.class, "Motor3" );
-                leftMotor = hwMap.get( DcMotor.class, "Motor1" );
-        }
-    }
-    
-    /**
      * Stops the robot. More accurately, stops all 3 of the robot's motors. 
      */
-    public void stop() {
-        
+    public void stop() 
+    {    
+        // Stopping Motors...
         frontMotor.setPower( 0 );
         rightMotor.setPower( 0 );
         leftMotor.setPower( 0 );
+
+        // Stopping Servos...
+        duck.setPower( 0 );
+        turntable.setPower( 0 );
+        intake.setPower( 0 );
     }
 }

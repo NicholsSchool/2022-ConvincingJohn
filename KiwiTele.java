@@ -60,11 +60,11 @@ import com.qualcomm.robotcore.util.Range;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Apteryx: TeleOp", group="Apteryx")
+@TeleOp(name="Kiwi: TeleOp", group="Kiwi")
 
-public class ApteryxTele extends OpMode {
+public class KiwiTele extends OpMode {
 
-    ApteryxMap robot = new ApteryxMap();
+    KiwiMap robot = new KiwiMap();
 
     // Variables
     RevBlinkinLedDriver.BlinkinPattern pattern;
@@ -83,20 +83,67 @@ public class ApteryxTele extends OpMode {
     public void start() {}
 
     @Override
-    public void loop() {
+    public void loop() 
+    {    
+        /*
+         *   SPEED
+         */
         
-        double r = Math.hypot( gamepad1.left_stick_x, gamepad1.left_stick_y );
-        double spin = -gamepad1.right_trigger - -gamepad1.left_trigger;
-        double theta = Math.toDegrees( Math.atan2( gamepad, x) );
+        // Calculating speed, r, magnitude of vector. ( r = hypot( x, y ) )
+        speed = Math.hypot( gamepad1.left_stick_x, gamepad1.left_stick_y );
+        
+        // Displaying speed...
+        telemetry.addData( "speed", "%1.2f", speed );
+        
+        
+        /*
+         *   SPIN SPEED
+         */
+        
+        // Calculating spinSpeed...
+        spinSpeed = -gamepad1.right_trigger - -gamepad1.left_trigger;
+        
+        // Displaying...
+        telemetry.addData( "spinSpeed", "%1.2f", spinSpeed );
+        
+        
+        /* 
+         *   ANGLE
+         */
+        
+        // Calculating angle, Theta. ( Theta = angle = arctan( y / x ) )
+        angle = Math.toDegrees( Math.atan2( gamepad1.left_stick_y, gamepad1.left_stick_x ) );
+        
+        // Displaying...
+        telemetry.addData( "angle", "%3.2f", angle );
 
-        if( r != 0 && spin != 0 )
-            robot.sauce2( r, theta, robot.getHeading() - lastHeading );
-        else {
+
+        /*
+         *  CENTERING
+         */
+        
+        // Centering Robot...
+        if( gamepad1.left_stick_button )
+            robot.robotCentric = !robot.robotCentric;
+        
+        telemetry.addData( "robotCentric", !robot.robotCentric );
+
+        
+        /*
+         *   ROBOT
+         */
+               
+        // Movement
+        if( speed != 0 && spinSpeed != 0 )
+            robot.sauce( speed, spinSpeed, angle, robot.getHeading() - lastHeading );
+        else 
+        {
             lastHeading = robot.getHeading();
-            if( r != 0 )
-                robot.move( r, spin );
-            if( spin != 0 )
-                robot.spin( spin );
+            
+            if( speed != 0 )
+                robot.move(speed, angle);
+            if( spinSpeed != 0 )
+                robot.spin( spinSpeed );
         }
     }
 
