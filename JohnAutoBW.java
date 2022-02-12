@@ -61,11 +61,7 @@ public class JohnAuto extends LinearOpMode
                                          ZENITH = 1000;
                     
     public final Scalar CAP_UPPER_BOUND = new Scalar( 255, 255, 125, 255 ),
-                        CAP_LOWER_BOUND = new Scalar( 175, 175, 0, 255 ),
-                        BLUE_UPPER_BOUND = new Scalar( 30, 45, 80, 255 ),
-                        BLUE_LOWER_BOUND = new Scalar( 10, 15, 40, 255 ),
-                        RED_UPPER_BOUND = new Scalar( 200, 80, 80, 255 ),
-                        RED_LOWER_BOUND = new Scalar( 150, 20, 20, 255 );
+                        CAP_LOWER_BOUND = new Scalar( 175, 175, 0, 255 );
 
     public int level = -1;
 
@@ -82,6 +78,7 @@ public class JohnAuto extends LinearOpMode
         rearMotor.setDirection( DcMotor.Direction.REVERSE );
         rightMotor.setDirection( DcMotor.Direction.REVERSE );
         leftMotor.setDirection( DcMotor.Direction.REVERSE );
+
         arm.setDirection( DcMotor.Direction.FORWARD );
         
         rearMotor.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
@@ -131,7 +128,6 @@ public class JohnAuto extends LinearOpMode
         sleep( 1000 );
                 
         telemetry.addData( "level", level );
-
         telemetry.update();
 
         waitForStart();
@@ -145,20 +141,20 @@ public class JohnAuto extends LinearOpMode
                     doSync( new Go( 31, 90 ), new LiftArmTo( LEVEL_1 ) );
                     doNow( new OuttakeFor( 2 ) );
                     doNow( new Go( 29, -90 ) );
-                    doNow( new Go( 40, -150 ) );
+                    doNow( new Go( 50, -150 ) );
                     break;
                 case 3:
-                    doSync( new Go( 35, 45 ), new LiftArmTo( LEVEL_3 ) );
+                    doSync( new Go( 34, 45 ), new LiftArmTo( LEVEL_3 ) );
                     doNow( new OuttakeFor( 2 ) );
                     doNow( new Go( 32, -45 ) );
-                    doNow( new Go( 50, 180 ) );
+                    doNow( new Go( 50, 0 ) );
                     break;
                 default:
                     doNow( new Turn( -30 ) );
                     doSync( new Go( 32, 90 ), new LiftArmTo( LEVEL_2 ) );
                     doNow( new OuttakeFor( 2 ) );
                     doNow( new Go( 30, -90 ) );
-                    doNow( new Go( 40, -150 ) );
+                    doNow( new Go( 50, -150 ) );
             }
         }
     }
