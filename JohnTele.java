@@ -30,10 +30,10 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import java.util.Map;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -60,20 +60,27 @@ import com.qualcomm.robotcore.util.Range;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Kiwi: TeleOp", group="Kiwi")
+@TeleOp(name="John: TeleOp", group="John")
 
-public class KiwiTele extends OpMode {
+public class JohnTele extends OpMode {
 
-    KiwiMap robot = new KiwiMap();
+    JohnMap robot = new JohnMap();
 
     // Variables
     RevBlinkinLedDriver.BlinkinPattern pattern;
-    double speed, spinSpeed, angle, lastHeading;
+    double speed, spinSpeed, angle, lastHeading, armSpeed, turntableSpeed, intakeSpeed;
+    
+    // Constants
+    static final double ARM_GOVERNOR = 0.75,
+                        TURNTABLE_GOVERNOR = 0.50;
 
     @Override
-    public void init() {
-        
+    public void init()
+    {
         robot.init( hardwareMap );
+
+        robot.resetEncoders();
+        robot.patternBlinkin( RevBlinkinLedDriver.BlinkinPattern.BLACK );
     }
 
     @Override
@@ -83,70 +90,137 @@ public class KiwiTele extends OpMode {
     public void start() {}
 
     @Override
-    public void loop() 
-    {    
+    public void loop()
+    {
+        // -------------------------------- CALCULATING --------------------------------
+        
         /*
-         *   SPEED
+         *   Motors
          */
         
-        // Calculating speed, r, magnitude of vector. ( r = hypot( x, y ) )
-        speed = Math.hypot( gamepad1.left_stick_x, gamepad1.left_stick_y );
+        // Calculating speed...
+        speed = Math.hypot( -gamepad1.left_stick_y, gamepad1.left_stick_x ) * Math.abs( Math.hypot( -gamepad1.left_stick_y, gamepad1.left_stick_x ) );
+        
+        if( robot.lowGear )
+            speed /= 2;
         
         // Displaying speed...
         telemetry.addData( "speed", "%1.2f", speed );
         
-        
-        /*
-         *   SPIN SPEED
-         */
-        
         // Calculating spinSpeed...
         spinSpeed = -gamepad1.right_trigger - -gamepad1.left_trigger;
         
-        // Displaying...
+        if( robot.lowGear )
+            spinSpeed /= 2;
+        
+        // Displaying spinSpeed...
         telemetry.addData( "spinSpeed", "%1.2f", spinSpeed );
         
+        // Calculating angle...
+        angle = Math.toDegrees( Math.atan2( -gamepad1.left_stick_y, gamepad1.left_stick_x ) );
         
-        /* 
-         *   ANGLE
-         */
-        
-        // Calculating angle, Theta. ( Theta = angle = arctan( y / x ) )
-        angle = Math.toDegrees( Math.atan2( gamepad1.left_stick_y, gamepad1.left_stick_x ) );
-        
-        // Displaying...
+        // Displaying angle...
         telemetry.addData( "angle", "%3.2f", angle );
-
-
+        
+        // Calculating armSpeed...
+        armSpeed = -gamepad2.right_stick_y * ARM_GOVERNOR;
+        
+        if( robot.lowGear )
+            armSpeed /= 2;
+        
+        // Displaying armSpeed...
+        telemetry.addData( "armSpeed", armSpeed );
+        
         /*
-         *  CENTERING
+         *  Servos
          */
         
-        // Centering Robot...
-        if( gamepad1.left_stick_button )
+        // Turntable
+        // Calculating turntableSpeed...
+        turntableSpeed = gamepad2.left_stick_x * TURNTABLE_GOVERNOR;
+        
+        if( robot.lowGear )
+            turntableSpeed /= 2;
+        
+        //Displaying turntableSpeed...
+        telemetry.addData( "turntableSpeed", turntableSpeed );
+        
+        // Intake
+        // Calculating intakeSpeed...
+        intakeSpeed = -gamepad2.right_trigger - -gamepad2.left_trigger;
+        
+        // Displaying intakeSpeed...
+        telemetry.addData( "intakeSpeed", intakeSpeed );
+        
+        // -------------------------------- BINDING --------------------------------
+        
+        // Centering...
+        if( gamepad1.a )
             robot.robotCentric = !robot.robotCentric;
         
-        telemetry.addData( "robotCentric", !robot.robotCentric );
-
+        telemetry.addData( "robotCentric", robot.robotCentric );
         
-        /*
-         *   ROBOT
-         */
-               
-        // Movement
-        if( speed != 0 && spinSpeed != 0 )
+        // Gearing...
+        if( gamepad1.b )
+            robot.lowGear = !robot.lowGear;
+
+        telemetry.addData( "lowGear", robot.lowGear );
+        
+        // Moving...
+        if( speed > 0 && spinSpeed != 0 )
             robot.sauce( speed, spinSpeed, angle, robot.getHeading() - lastHeading );
-        else 
+        else if( speed > 0 && spinSpeed == 0 )
         {
             lastHeading = robot.getHeading();
-            
-            if( speed != 0 )
-                robot.move(speed, angle);
-            if( spinSpeed != 0 )
-                robot.spin( spinSpeed );
+            robot.move( speed, angle );
         }
+        else if( speed == 0 && spinSpeed != 0 )
+        {
+            lastHeading = robot.getHeading();
+            robot.spin( spinSpeed );
+        }
+        else
+        {
+            lastHeading = robot.getHeading();
+            robot.stopWheels();
+        }
+        
+        if( gamepad2.right_stick_y != 0 )
+            robot.liftArm( ( armSpeed ) * Math.abs( armSpeed ) );
+        else
+            robot.stopArm();
+            
+        if( gamepad2.b && robot.getArmEncoderPosition() < 900 ) 
+            robot.liftArm( ARM_GOVERNOR );
+        
+        /*
+         *  Servos
+         */
+        
+        // Ducky
+        if( gamepad2.right_bumper )
+            robot.spinDuckyRight();
+        else if( gamepad2.left_bumper )
+            robot.spinDuckyLeft();
+        else
+            robot.stopDucky();
+        
+        // Turntable
+        if( turntableSpeed != 0 )
+            robot.turnTurntable( turntableSpeed * Math.abs( turntableSpeed ) );
+        else
+            robot.stopTurntable();
+        
+        // Intake
+        if( intakeSpeed != 0 )
+            robot.intake( intakeSpeed );
+        else
+            robot.stopIntake();
     }
 
     @Override
-    public void stop() { robot.stop(); }
+    public void stop()
+    {
+        robot.stopRobot();
+    }
 }
