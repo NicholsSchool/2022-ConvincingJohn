@@ -245,6 +245,13 @@ public class JohnMap
         return arm.getCurrentPosition();
     }
     
+    public void resetArmEncoderPosition() 
+    {
+        arm.setMode( DcMotor.RunMode.STOP_AND_RESET_ENCODER );
+        
+        arm.setMode( DcMotor.RunMode.RUN_USING_ENCODERS );
+    }
+    
     
     /*
      *  RECORDING

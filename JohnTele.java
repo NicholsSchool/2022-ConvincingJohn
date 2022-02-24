@@ -71,9 +71,13 @@ public class JohnTele extends OpMode {
     double speed, spinSpeed, angle, lastHeading, armSpeed, turntableSpeed, intakeSpeed;
     
     // Constants
-    static final double ARM_GOVERNOR = 0.75,
-                        TURNTABLE_GOVERNOR = 0.50;
-
+    static final double ARM_GOVERNOR = 1.00,
+                        TURNTABLE_GOVERNOR = 1.00,
+                        SLOWER_TURNTABLE_GOVERNOR = 0.80;
+    
+    static final int LEVEL_3 = 900,
+                     SHARED = 400;
+    
     @Override
     public void init()
     {
@@ -123,10 +127,7 @@ public class JohnTele extends OpMode {
         telemetry.addData( "angle", "%3.2f", angle );
         
         // Calculating armSpeed...
-        armSpeed = -gamepad2.right_stick_y * ARM_GOVERNOR;
-        
-        if( robot.lowGear )
-            armSpeed /= 2;
+        armSpeed = ( -gamepad2.right_stick_y * ARM_GOVERNOR ) * Math.abs( -gamepad2.right_stick_y * ARM_GOVERNOR );
         
         // Displaying armSpeed...
         telemetry.addData( "armSpeed", armSpeed );
@@ -137,11 +138,8 @@ public class JohnTele extends OpMode {
         
         // Turntable
         // Calculating turntableSpeed...
-        turntableSpeed = gamepad2.left_stick_x * TURNTABLE_GOVERNOR;
-        
-        if( robot.lowGear )
-            turntableSpeed /= 2;
-        
+        turntableSpeed = gamepad2.right_stick_x;
+
         //Displaying turntableSpeed...
         telemetry.addData( "turntableSpeed", turntableSpeed );
         
@@ -190,8 +188,14 @@ public class JohnTele extends OpMode {
         else
             robot.stopArm();
             
-        if( gamepad2.b && robot.getArmEncoderPosition() < 900 ) 
+        if( gamepad2.b && robot.getArmEncoderPosition() < LEVEL_3 ) 
             robot.liftArm( ARM_GOVERNOR );
+        
+        if( gamepad2.a && robot.getArmEncoderPosition() < SHARED )
+            robot.liftArm( ARM_GOVERNOR );
+        
+        if( gamepad2.x )
+            robot.resetArmEncoderPosition();
         
         /*
          *  Servos

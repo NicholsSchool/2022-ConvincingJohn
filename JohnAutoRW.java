@@ -24,8 +24,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 
-@Autonomous( name = "John: Auto", group = "John" )
-public class JohnAuto extends LinearOpMode
+@Autonomous( name = "John: Auto - RW", group = "John" )
+public class JohnAutoRW extends LinearOpMode
 {
     public DcMotor rearMotor, rightMotor, leftMotor, arm;
     public DcMotorSimple duck, intake;
@@ -112,17 +112,17 @@ public class JohnAuto extends LinearOpMode
 
         webcam.setPipeline( new CapPipeline() );
 
-        telemetry.add( "3..." );
+        telemetry.addLine( "3..." );
         telemetry.update();
         
         sleep( 1000 );
 
-        telemetry.add( "2..." );
+        telemetry.addLine( "2..." );
         telemetry.update();
         
         sleep( 1000 );
 
-        telemetry.add( "1..." );
+        telemetry.addLine( "1..." );
         telemetry.update();
         
         sleep( 1000 );

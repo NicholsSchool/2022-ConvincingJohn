@@ -24,8 +24,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 
-@Autonomous( name = "John: Auto", group = "John" )
-public class JohnAuto extends LinearOpMode
+@Autonomous( name = "John: Auto - BW", group = "John" )
+public class JohnAutoBW extends LinearOpMode
 {
     public DcMotor rearMotor, rightMotor, leftMotor, arm;
     public DcMotorSimple duck, intake;
@@ -55,9 +55,9 @@ public class JohnAuto extends LinearOpMode
                         OUTTAKE_SPEED = -0.50;
                     
                         // hs
-                        public final int LEVEL_1 = 300,
+                        public final int LEVEL_1 = 315,
                                          LEVEL_2 = 500,
-                                         LEVEL_3 = 700,
+                                         LEVEL_3 = 750,
                                          ZENITH = 1000;
                     
     public final Scalar CAP_UPPER_BOUND = new Scalar( 255, 255, 125, 255 ),
@@ -112,17 +112,17 @@ public class JohnAuto extends LinearOpMode
 
         webcam.setPipeline( new CapPipeline() );
 
-        telemetry.add( "3..." );
+        telemetry.addLine( "3..." );
         telemetry.update();
         
         sleep( 1000 );
 
-        telemetry.add( "2..." );
+        telemetry.addLine( "2..." );
         telemetry.update();
         
         sleep( 1000 );
 
-        telemetry.add( "1..." );
+        telemetry.addLine( "1..." );
         telemetry.update();
         
         sleep( 1000 );
@@ -140,20 +140,21 @@ public class JohnAuto extends LinearOpMode
                     doNow( new Turn( -30 ) );
                     doSync( new Go( 31, 90 ), new LiftArmTo( LEVEL_1 ) );
                     doNow( new OuttakeFor( 2 ) );
-                    doNow( new Go( 29, -90 ) );
+                    doNow( new Go( 30, -90 ) );
                     doNow( new Go( 50, -150 ) );
                     break;
                 case 3:
-                    doSync( new Go( 34, 45 ), new LiftArmTo( LEVEL_3 ) );
+                    doSync( new Go( 33, 45 ), new LiftArmTo( LEVEL_3 ) );
                     doNow( new OuttakeFor( 2 ) );
-                    doNow( new Go( 32, -45 ) );
-                    doNow( new Go( 50, 0 ) );
+                    doNow( new Go( 31, -135 ) );
+                    doNow( new Go( 50, 180 ) );
+                    doNow( new Go( 12, 90 ) );
                     break;
                 default:
                     doNow( new Turn( -30 ) );
                     doSync( new Go( 32, 90 ), new LiftArmTo( LEVEL_2 ) );
                     doNow( new OuttakeFor( 2 ) );
-                    doNow( new Go( 30, -90 ) );
+                    doNow( new Go( 31, -90 ) );
                     doNow( new Go( 50, -150 ) );
             }
         }

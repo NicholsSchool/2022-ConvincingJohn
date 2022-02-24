@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import java.util.ArrayList;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import java.lang.annotation.Target;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -10,6 +11,7 @@ import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
@@ -55,14 +57,14 @@ public class JohnAuto extends LinearOpMode
                         OUTTAKE_SPEED = -0.50;
                     
                         // hs
-                        public final int LEVEL_1 = 300,
+                        public final int LEVEL_1 = 315,
                                          LEVEL_2 = 500,
                                          LEVEL_3 = 700,
                                          ZENITH = 1000;
                     
-    public final Scalar CAP_UPPER_BOUND = new Scalar( 255, 255, 125, 255 ),
-                        CAP_LOWER_BOUND = new Scalar( 175, 175, 0, 255 ),
-                        BLUE_UPPER_BOUND = new Scalar( 30, 45, 80, 255 ),
+    public final Scalar CAP_UPPER_BOUND = new Scalar( 75, 255, 255 ), // HSV v
+                        CAP_LOWER_BOUND = new Scalar( 70, 150, 150 ),
+                        BLUE_UPPER_BOUND = new Scalar( 30, 45, 80, 255 ), // RGBA v
                         BLUE_LOWER_BOUND = new Scalar( 10, 15, 40, 255 ),
                         RED_UPPER_BOUND = new Scalar( 200, 80, 80, 255 ),
                         RED_LOWER_BOUND = new Scalar( 150, 20, 20, 255 );
@@ -76,23 +78,26 @@ public class JohnAuto extends LinearOpMode
     @Override
     public void runOpMode() throws InterruptedException
     {
+        // resetArmEncoder();
+        
         // Motors
         rearMotor = hardwareMap.get( DcMotor.class, "Motor3" );
         rightMotor = hardwareMap.get( DcMotor.class, "Motor2" );
         leftMotor = hardwareMap.get( DcMotor.class, "Motor1" );
         
-        arm = hardwareMap.get( DcMotor.class, "Arm" );
+        // arm = hardwareMap.get( DcMotor.class, "Arm" );
         
         rearMotor.setDirection( DcMotor.Direction.REVERSE );
         rightMotor.setDirection( DcMotor.Direction.REVERSE );
         leftMotor.setDirection( DcMotor.Direction.REVERSE );
-        arm.setDirection( DcMotor.Direction.FORWARD );
+        
+        // arm.setDirection( DcMotor.Direction.FORWARD );
         
         rearMotor.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
         rightMotor.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
         leftMotor.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
         
-        arm.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
+        // arm.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE );
         
         // Servos
         duck = hardwareMap.get( DcMotorSimple.class, "Duck" );
@@ -119,33 +124,33 @@ public class JohnAuto extends LinearOpMode
 
         webcam.setPipeline( new CapPipeline() );
         
-        sleep( 2000 );
+        // sleep( 2000 );
         
-        telemetry.addData( "Status", "Almost Ready..." );
+        // telemetry.addData( "Status", "Almost Ready..." );
         
-        telemetry.update();
+        // telemetry.update();
         
-        webcam.setPipeline( new BluePipeline() );
+        // webcam.setPipeline( new BluePipeline() );
         
-        sleep( 2000 );
+        // sleep( 2000 );
         
-        telemetry.addData( "Status", "Almost..." );
+        // telemetry.addData( "Status", "Almost..." );
         
-        telemetry.update();
+        // telemetry.update();
         
-        webcam.setPipeline( new RedPipeline() );
+        // webcam.setPipeline( new RedPipeline() );
         
-        sleep( 2000 );
+        // sleep( 2000 );
         
-        telemetry.addData( "Status", "Ready!" );
+        // telemetry.addData( "Status", "Ready!" );
         
-        telemetry.addData( "level", level );
-        telemetry.addData( "bMass", bMass );
-        telemetry.addData( "rMass", rMass );
-        telemetry.addData( "alli", alli );
-        telemetry.addData( "side", side );
+        // telemetry.addData( "level", level );
+        // telemetry.addData( "bMass", bMass );
+        // telemetry.addData( "rMass", rMass );
+        // telemetry.addData( "alli", alli );
+        // telemetry.addData( "side", side );
 
-        telemetry.update();
+        // telemetry.update();
 
         waitForStart();
 
@@ -541,41 +546,73 @@ public class JohnAuto extends LinearOpMode
             intake.setPower( 0 );
         }
     }
-
+    
     class CapPipeline extends OpenCvPipeline
     {
-        Mat yellows = new Mat();
-
+        Mat mat = new Mat();
+        
+        final Rect RECT_1 = new Rect(
+            new Point( 150, 650 ),
+            new Point( 350, 250 ) );
+        final Rect RECT_2 = new Rect(
+            new Point( 550, 650 ),
+            new Point( 750, 250 ) );
+        final Rect RECT_3 = new Rect(
+            new Point( 1000, 650 ),
+            new Point( 1200, 250 ) );
+            
+        static final double PERCENT_COLOR_THRESHOLD = 0.5;
+        
         @Override
-        public Mat processFrame(Mat rgba)
+        public Mat processFrame( Mat input ) 
         {
-            Core.inRange( rgba, CAP_LOWER_BOUND, CAP_UPPER_BOUND, yellows );
-
-            ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-
-            Imgproc.findContours( yellows, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE );
-
-            if( contours.isEmpty() )
-                return yellows;
-
-            MatOfPoint cap = contours.get( 0 );
-            for( MatOfPoint contour : contours )
-                if( Imgproc.contourArea( contour ) > Imgproc.contourArea( cap ) )
-                    cap = contour;
-
-            Moments m = Imgproc.moments( cap );
-
-            double x = m.m10 / m.m00;
-            double y = m.m01 / m.m00;
-
-            if( 800 < x )
-                level = 3;
-            else if( x < 500 )
+            Imgproc.cvtColor( input, mat, Imgproc.COLOR_RGB2HSV );
+            
+            Core.inRange( mat, CAP_LOWER_BOUND, CAP_UPPER_BOUND, mat );
+            
+            Mat loc1 = mat.submat( RECT_1 );
+            Mat loc2 = mat.submat( RECT_2 );
+            Mat loc3 = mat.submat( RECT_3 );
+            
+            double percent1 = Core.sumElems( loc1 ).val[0] / RECT_1.area() / 255;
+            double percent2 = Core.sumElems( loc2 ).val[0] / RECT_2.area() / 255;
+            double percent3 = Core.sumElems( loc3 ).val[0] / RECT_3.area() / 255;
+            
+            loc1.release();
+            loc2.release();
+            loc3.release();
+            
+            telemetry.addData( "loc 1 raw value", (int) Core.sumElems( loc1 ).val[ 0 ] );
+            telemetry.addData( "loc 2 raw value", (int) Core.sumElems( loc2 ).val[ 0 ] );
+            telemetry.addData( "loc 3 raw value", (int) Core.sumElems( loc3 ).val[ 0 ] );
+            
+            telemetry.addData( "loc 1 percentage", Math.round( percent1 * 100 ) + "%" );
+            telemetry.addData( "loc 2 percentage", Math.round( percent2 * 100 ) + "%");
+            telemetry.addData( "loc 3 percentage", Math.round( percent3 * 100 ) + "%");
+            
+            if( percent1 > Math.max( percent2, percent3 ) ) 
                 level = 1;
-            else
+            
+            if( percent2 > Math.max( percent1, percent3 ) ) 
                 level = 2;
-
-            return yellows;
+            
+            if( percent3 > Math.max( percent1, percent2 ) ) 
+                level = 3;
+            
+            telemetry.addData( "level", level );
+            
+            telemetry.update();
+            
+            Imgproc.cvtColor( mat, mat, Imgproc.COLOR_GRAY2RGB );
+            
+            final Scalar NOT_HERE = new Scalar( 255, 0, 0 );
+            final Scalar HERE = new Scalar( 0, 128, 0 );
+            
+            Imgproc.rectangle( mat, RECT_1, level == 1? HERE : NOT_HERE );
+            Imgproc.rectangle( mat, RECT_2, level == 2? HERE : NOT_HERE );
+            Imgproc.rectangle( mat, RECT_3, level == 3? HERE : NOT_HERE );
+            
+            return mat;
         }
     }
 
