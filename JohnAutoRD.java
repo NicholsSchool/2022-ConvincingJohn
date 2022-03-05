@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.opencv.core.Rect;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -47,7 +48,7 @@ public class JohnAutoRD extends LinearOpMode
                         
                         // vs
                         SPEED = 0.30,
-                        APPLY_SPEED = 0.02,
+                        APPLY_SPEED = 0.03,
                         SPIN_SPEED = 0.30,
                         ARM_SPEED = 0.30,
                         DUCK_SPEED = 0.60,
@@ -55,13 +56,14 @@ public class JohnAutoRD extends LinearOpMode
                         OUTTAKE_SPEED = -0.50;
                     
                         // hs
-                        public final int LEVEL_1 = 300,
-                                         LEVEL_2 = 500,
-                                         LEVEL_3 = 700,
-                                         ZENITH = 1000;
+                        public final int LEVEL_1 = 500,
+                                         LEVEL_2 = 1000,
+                                         LEVEL_3 = 1500,
+                                         ZENITH = 1000,
+                                         EPSILON = 20;
                     
-    public final Scalar CAP_UPPER_BOUND = new Scalar( 255, 255, 125, 255 ),
-                        CAP_LOWER_BOUND = new Scalar( 175, 175, 0, 255 );
+    public final Scalar CAP_UPPER_BOUND = new Scalar( 75, 255, 255 ), // HSV v
+                        CAP_LOWER_BOUND = new Scalar( 70, 150, 150 );
 
     public int level = -1;
 
@@ -74,6 +76,12 @@ public class JohnAutoRD extends LinearOpMode
         leftMotor = hardwareMap.get( DcMotor.class, "Motor1" );
         
         arm = hardwareMap.get( DcMotor.class, "Arm" );
+        
+        rearMotor.setMode( DcMotor.RunMode.RUN_USING_ENCODER );
+        rightMotor.setMode( DcMotor.RunMode.RUN_USING_ENCODER );
+        leftMotor.setMode( DcMotor.RunMode.RUN_USING_ENCODER );
+        
+        arm.setMode( DcMotor.RunMode.RUN_WITHOUT_ENCODER );
         
         rearMotor.setDirection( DcMotor.Direction.REVERSE );
         rightMotor.setDirection( DcMotor.Direction.REVERSE );
@@ -92,7 +100,7 @@ public class JohnAutoRD extends LinearOpMode
         intake = hardwareMap.get( DcMotorSimple.class, "Intake" );
 
         duck.setDirection( DcMotorSimple.Direction.REVERSE );
-        intake.setDirection( DcMotorSimple.Direction.FORWARD );
+        intake.setDirection( DcMotorSimple.Direction.REVERSE );
 
         // Webcam
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier( "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName() );
@@ -111,89 +119,47 @@ public class JohnAutoRD extends LinearOpMode
         } );
 
         webcam.setPipeline( new CapPipeline() );
-
-        telemetry.addLine( "3..." );
-        telemetry.update();
         
-        sleep( 1000 );
-
-        telemetry.addLine( "2..." );
-        telemetry.update();
+        resetArmEncoder();
         
-        sleep( 1000 );
-
-        telemetry.addLine( "1..." );
-        telemetry.update();
-        
-        sleep( 1000 );
-                
-        telemetry.addData( "level", level );
-        telemetry.update();
-
         waitForStart();
-
+        
         if( opModeIsActive() )
         {
             switch( level )
             {
                 case 1:
-                    doNow( new Go( 10, 90 ) );
-                    doNow( new Turn( -90 ) );
-                    doSync( new Go( 23, 90 ), new LiftArmTo( LEVEL_1 ) );
-                    doNow( new Turn( 90 ) );
-                    doNow( new Go( 7, 90 ) );
+                    doSync( new Go( 31, 60 ), new LiftArmTo( LEVEL_1 ) );
                     doNow( new OuttakeFor( 2 ) );
-                    doNow( new Go( 12, -90 ) );
-                    doNow( new Turn( -90 ) );
-                    doSync( new Go( 49, -90 ), new BringArmIn()  );
-                    doNow( new Turn( 90 ) );
-                    doSync( new Apply( 225, 6 ), new DuckFor( 8 ) );
-                    doNow( new Go( 17, 90 ) );
+                    doSync( new Go( 28, 240 ), new WaitTo( 1, new BringArmIn() ) );
+                    doNow( new Go( 24, 180 ) );
+                    doSync( new DuckFor( 10 ), new Apply( 225, 10 ) );
+                    doNow( new Go( 22, 90 ) );
+                    doNow( new Go( 10, 180 ) );
                     break;
                 case 3:
-                    doNow( new Go( 10, 90 ) );
-                    doNow( new Turn( -90 ) );
-                    doSync( new Go( 24, 90 ), new LiftArmTo( LEVEL_3 ) );
-                    doNow( new Turn( 90 ) );
-                    doNow( new Go( 10, 90 ) );
+                    doSync( new Go( 34, 60 ), new LiftArmTo( LEVEL_3 ) );
                     doNow( new OuttakeFor( 2 ) );
-                    doNow( new Go( 15, -90 ) );
-                    doNow( new Turn( -90 ) );
-                    doSync( new Go( 50, -90 ), new BringArmIn() );
-                    doNow( new Turn( 90 ) );
-                    doSync( new Apply( 225, 6 ), new DuckFor( 8 ) );
-                    doNow( new Go( 17, 90 ) );
+                    doSync( new Go( 31, 240 ), new WaitTo( 1, new BringArmIn() ) );
+                    doNow( new Go( 24, 180 ) );
+                    doSync( new DuckFor( 10 ), new Apply( 225, 10 ) );
+                    doNow( new Go( 22, 90 ) );
+                    doNow( new Go( 10, 180 ) );
                     break;
                 default:
-                    doNow( new Go( 10, 90 ) );
-                    doNow( new Turn( -90 ) );
-                    doSync( new Go( 24, 90 ), new LiftArmTo( LEVEL_2 ) );
-                    doNow( new Turn( 90 ) );
-                    doNow( new Go( 9, 90 ) );
+                    doSync( new Go( 33, 60 ), new LiftArmTo( LEVEL_2 ) );
                     doNow( new OuttakeFor( 2 ) );
-                    doNow( new Go( 14, -90 ) );
-                    doNow( new Turn( -90 ) );
-                    doSync( new Go( 50, -90 ), new BringArmIn() );
-                    doNow( new Turn( 90 ) );
-                    doSync( new Apply( 225, 6 ), new DuckFor( 8 ) );
-                    doNow( new Go( 17, 90 ) );
+                    doSync( new Go( 30, 240 ), new WaitTo( 1, new BringArmIn() ) );
+                    doNow( new Go( 24, 180 ) );
+                    doSync( new DuckFor( 10 ), new Apply( 225, 10 ) );
+                    doNow( new Go( 22, 90 ) );
+                    doNow( new Go( 10, 180 ) );
             }
         }
     }
 
     public void doNow( Thread toDo ) throws InterruptedException
     {
-        toDo.start();
-
-        toDo.join();
-    }
-
-    public void doIn( Thread toDo, int t ) throws InterruptedException
-    {
-        long startT = System.currentTimeMillis();
-
-        while( opModeIsActive() && System.currentTimeMillis() - startT < t ) {}
-
         toDo.start();
 
         toDo.join();
@@ -223,7 +189,28 @@ public class JohnAutoRD extends LinearOpMode
     {
         arm.setMode( DcMotor.RunMode.STOP_AND_RESET_ENCODER );
 
-        arm.setMode( DcMotor.RunMode.RUN_USING_ENCODERS );
+        arm.setMode( DcMotor.RunMode.RUN_WITHOUT_ENCODER );
+    }
+    
+    class WaitTo extends Thread
+    {
+        private int time;
+        private Thread thread;
+
+        public WaitTo( int t, Thread th ) 
+        {
+            time = t;
+            thread = th;
+        }
+
+        public void run()
+        {
+            long startTime = System.currentTimeMillis() / 1000;
+
+            while( opModeIsActive() && ( System.currentTimeMillis() / 1000 ) - startTime < time ) {}
+
+            thread.run();
+        }
     }
 
     class Go extends Thread
@@ -277,6 +264,8 @@ public class JohnAutoRD extends LinearOpMode
         
         public void run() 
         {
+            resetWheelEncoders();
+            
             rearMotor.setMode( DcMotor.RunMode.RUN_USING_ENCODER );
             rightMotor.setMode( DcMotor.RunMode.RUN_USING_ENCODER );
             leftMotor.setMode( DcMotor.RunMode.RUN_USING_ENCODER );
@@ -332,23 +321,20 @@ public class JohnAutoRD extends LinearOpMode
 
     class LiftArmTo extends Thread
     {
-        int pos;
+        int position;
 
         public LiftArmTo( int p )
         {
-            pos = p;
+            position = p;
         }
 
         public void run()
         {
-            arm.setTargetPosition( pos );
-
-            arm.setMode( DcMotor.RunMode.RUN_TO_POSITION );
-
-            arm.setPower( ARM_SPEED );
-
-            while( opModeIsActive() && arm.isBusy() ) {}
-
+            while( opModeIsActive() && Math.abs( position - arm.getCurrentPosition() ) > EPSILON ) 
+            {
+                arm.setPower( position - arm.getCurrentPosition() > 0? ARM_SPEED : -ARM_SPEED );
+            }
+            
             arm.setPower( 0 );
         }
     }
@@ -427,38 +413,62 @@ public class JohnAutoRD extends LinearOpMode
 
     class CapPipeline extends OpenCvPipeline
     {
-        Mat yellows = new Mat();
-
+        Mat mat = new Mat();
+        
+        final Rect RECT_1 = new Rect( new Point( 150, 650 ), new Point( 350, 250 ) );
+        final Rect RECT_2 = new Rect( new Point( 550, 650 ), new Point( 750, 250 ) );
+        final Rect RECT_3 = new Rect( new Point( 1000, 650 ), new Point( 1200, 250 ) );
+            
         @Override
-        public Mat processFrame(Mat rgba)
+        public Mat processFrame( Mat input ) 
         {
-            Core.inRange( rgba, CAP_LOWER_BOUND, CAP_UPPER_BOUND, yellows );
-
-            ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-
-            Imgproc.findContours( yellows, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE );
-
-            if( contours.isEmpty() )
-                return yellows;
-
-            MatOfPoint cap = contours.get( 0 );
-            for( MatOfPoint contour : contours )
-                if( Imgproc.contourArea( contour ) > Imgproc.contourArea( cap ) )
-                    cap = contour;
-
-            Moments m = Imgproc.moments( cap );
-
-            double x = m.m10 / m.m00;
-            double y = m.m01 / m.m00;
-
-            if( 800 < x )
-                level = 3;
-            else if( x < 500 )
+            Imgproc.cvtColor( input, mat, Imgproc.COLOR_RGB2HSV );
+            
+            Core.inRange( mat, CAP_LOWER_BOUND, CAP_UPPER_BOUND, mat );
+            
+            Mat loc1 = mat.submat( RECT_1 );
+            Mat loc2 = mat.submat( RECT_2 );
+            Mat loc3 = mat.submat( RECT_3 );
+            
+            double percent1 = Core.sumElems( loc1 ).val[0] / RECT_1.area() / 255;
+            double percent2 = Core.sumElems( loc2 ).val[0] / RECT_2.area() / 255;
+            double percent3 = Core.sumElems( loc3 ).val[0] / RECT_3.area() / 255;
+            
+            loc1.release();
+            loc2.release();
+            loc3.release();
+            
+            telemetry.addData( "loc 1 raw value", (int) Core.sumElems( loc1 ).val[ 0 ] );
+            telemetry.addData( "loc 2 raw value", (int) Core.sumElems( loc2 ).val[ 0 ] );
+            telemetry.addData( "loc 3 raw value", (int) Core.sumElems( loc3 ).val[ 0 ] );
+            
+            telemetry.addData( "loc 1 percentage", Math.round( percent1 * 100 ) + "%" );
+            telemetry.addData( "loc 2 percentage", Math.round( percent2 * 100 ) + "%");
+            telemetry.addData( "loc 3 percentage", Math.round( percent3 * 100 ) + "%");
+            
+            if( percent1 > Math.max( percent2, percent3 ) ) 
                 level = 1;
-            else
+            
+            if( percent2 > Math.max( percent1, percent3 ) ) 
                 level = 2;
-
-            return yellows;
+            
+            if( percent3 > Math.max( percent1, percent2 ) ) 
+                level = 3;
+            
+            telemetry.addData( "level", level );
+            
+            telemetry.update();
+            
+            Imgproc.cvtColor( mat, mat, Imgproc.COLOR_GRAY2RGB );
+            
+            final Scalar NOT_HERE = new Scalar( 255, 0, 0 );
+            final Scalar HERE = new Scalar( 0, 128, 0 );
+            
+            Imgproc.rectangle( mat, RECT_1, level == 1? HERE : NOT_HERE );
+            Imgproc.rectangle( mat, RECT_2, level == 2? HERE : NOT_HERE );
+            Imgproc.rectangle( mat, RECT_3, level == 3? HERE : NOT_HERE );
+            
+            return mat;
         }
     }
 }
